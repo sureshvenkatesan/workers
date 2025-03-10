@@ -1,0 +1,17 @@
+{
+  "name": "sv-builddiff-vul-compare",
+  "description": "Run a script on AFTER_BUILD_INFO_SAVE",
+  "sourceCodePath": "./worker.ts",
+  "action": "AFTER_BUILD_INFO_SAVE",
+  "enabled": false,
+  "debug": false,
+  "projectKey": "",
+  "secrets": {
+    "adminGroupName": "6VfWgfhAC5Me0SvoldpxLhK0iNWjV5RfkqbC5RIIVSP2CZdoffWXZDF3tP0bazd6vAxl9ux1NmUgbEUOnZT/Y78O04ePZg==",
+    "buildDiffUrl": "9sm3KiFLTuq72I/DRseHZEekUQc/ZNvV7ojZL8l9/y+tE/r91iqxQwQmppFNd3KasdGE1QVDcCK+u7xo8kv18qDJ0pPGJp/W0HY47rsp3PtGM5p7rPFbhRnd5Ii/S6ZXv1rk3mADsJj3hlSPPuurWOcAKikXJNI+WA==",
+    "prev_n_build_run_to_compare": "/SECcwIYJeYzixnF0ar3Gb4Kv57xOJaT6hC/1Bx1/NVl1KEVtsw64LpYQa2h/QzAPIAIs06H2KWXudt3Eg==",
+    "projectKey": "hvq56msDlhRP3iRL96YvFIOVRycmvk1Qabvt/Xcvt0f89BOh+xrTSwRGHD0lPmkR3viD7lhDRTmaYDEzWldwBXQd"
+  },
+  "filterCriteria": {},
+  "application": "artifactory"
+}
