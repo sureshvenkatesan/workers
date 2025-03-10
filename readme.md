@@ -3,7 +3,7 @@
 
 ###Example Workers:
 - [sv-builddiff-vul-compare](sv-builddiff-vul-compare)
-
+This worker compares security vulnerabilities between two builds using Xray UI API "https://your-instance.jfrog.io/ui/api/v1/xray/ui/security_info/diff"  and generates an HTML report of the differences.
 
 
 
