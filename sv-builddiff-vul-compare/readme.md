@@ -1,6 +1,8 @@
 # Build Diff Vulnerability Compare Worker
 
-This worker compares security vulnerabilities between two builds using Xray UI API "https://your-instance.jfrog.io/ui/api/v1/xray/ui/security_info/diff"  and generates an HTML report of the differences.
+This worker compares security vulnerabilities between two build jobs (runs of a build) using Xray UI API "https://your-instance.jfrog.io/ui/api/v1/xray/ui/security_info/diff"  and generates an HTML report of the differences.
+
+**Note**: This is different from the Artifactory REST API [Builds Diff](https://jfrog.com/help/r/jfrog-rest-apis/builds-diff) the compares build artifacts/dependencies/environment between two build jobs (runs of a build) 
 
 ## Features
 
