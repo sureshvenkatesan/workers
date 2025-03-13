@@ -110,7 +110,22 @@ curl -X POST 'https://example.jfrog.io/ui/api/v1/xray/ui/security_info/diff' \
   -H 'X-Requested-With: XMLHttpRequest' \
   -H 'Accept: */*' \
   -H 'Cookie: __Host-REFRESHTOKEN=*;__Host-ACCESSTOKEN=YOURTOKEN' \
-  -d '{"old":{"type":"build","component_id":"build://[cg-lab-build-info]/cg-mvn-base-webgoat:build-diff-v1","package_id":"build://[cg-lab-build-info]/cg-mvn-base-webgoat","path":"","version":"build-diff-v1"},"new":{"type":"build","component_id":"build://[cg-lab-build-info]/cg-mvn-base-webgoat:2025-03-04_10-16-43","package_id":"build://[cg-lab-build-info]/cg-mvn-base-webgoat","path":"","version":"2025-03-04_10-16-43"}}'
+  -d '{
+  "old": {
+    "type": "build",
+    "component_id": "build://[cg-lab-build-info]/cg-mvn-base-webgoat:build-diff-v1",
+    "package_id": "build://[cg-lab-build-info]/cg-mvn-base-webgoat",
+    "path": "",
+    "version": "build-diff-v1"
+  },
+  "new": {
+    "type": "build",
+    "component_id": "build://[cg-lab-build-info]/cg-mvn-base-webgoat:2025-03-04_10-16-43",
+    "package_id": "build://[cg-lab-build-info]/cg-mvn-base-webgoat",
+    "path": "",
+    "version": "2025-03-04_10-16-43"
+  }
+}'
 ```
 
 
