@@ -24,4 +24,4 @@ This worker compares security vulnerabilities between two builds using Xray UI A
 This worker enforces artifact immutability and duplicate prevention across multiple JFrog Platform Deployments (JPDs) and repositories. It checks incoming uploads against configurable rules, blocking or warning on duplicates according to your policy. The worker is highly configurable, supporting per-JPD, per-repo, and per-path granularity, and is optimized for performance in large, multi-instance environments.
 
 - [Repository Synchronization to Edge](https://github.com/flouis1/jf-repo-sync-to-edge)
-This worker synchronizes repositories from a source Artifactory server to a target Artifactory server. It first checks the repositories on the source server using a regular expression, then creates those that do not already exist on the target server.
+This worker synchronizes repositories from a source Artifactory server to a target Artifactory server. It first checks the `LOCAL` repositories on the source server using a regular expression, then creates smart `remote` repositories ( with same name) for those that do not already exist on the target server.
