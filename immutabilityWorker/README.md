@@ -47,6 +47,8 @@ To install and deploy this worker, follow these steps:
             "application": "artifactory"
         }
 
+
+
 4. **Deploy the Worker**
    - Deploy the worker to your JFrog Platform using the CLI:
      ```bash
@@ -59,6 +61,21 @@ To install and deploy this worker, follow these steps:
      ```
    - The worker will now be installed in your JFrog Platform and can be [configured in the UI](https://jfrog.com/help/r/jfrog-platform-administration-documentation/configure-workers-in-the-ui) or used based on the previous step. 
    - If using the manifest file, you can just redeploy if changes are made.
+
+**Note:** 
+One more point, the [manifest.json](manifest.json) is not workable as it is , as you will require at least one repo in the repoKeys array.. If you run it as is you will get the following error:
+```
+jf worker deploy --server-id <server-id>
+09:59:56 [🔵Info] Trace ID for JFrog Platform logs: 0a8326c584c3149f
+09:59:56 [🚨Error] invalid manifest: at least one repository key must be provided 
+```
+Once you provide a value it should execute as follows:
+```
+jf worker deploy --server-id <server-id>
+10:02:21 [🔵Info] Worker  details returned from the server
+10:02:21 [🔵Info] Updating worker 'blockDuplicates'
+10:02:21 [🔵Info] Worker 'blockDuplicates' updated
+```
 
 5. **Configure & Enable to worker**
     - If the worker is not enabled by default, you can enable it via the JFrog Platform UI:
