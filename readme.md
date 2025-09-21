@@ -20,5 +20,8 @@ This repository contains a collection of sample workers for common use cases. Fe
 - [sv-builddiff-vul-compare](sv-builddiff-vul-compare)
 This worker compares security vulnerabilities between two builds using Xray UI API "https://your-instance.jfrog.io/ui/api/v1/xray/ui/security_info/diff"  and generates an HTML report of the differences.
 
+- [immutabilityWorker](immutabilityWorker)
+This worker enforces artifact immutability and duplicate prevention across multiple JFrog Platform Deployments (JPDs) and repositories. It checks incoming uploads against configurable rules, blocking or warning on duplicates according to your policy. The worker is highly configurable, supporting per-JPD, per-repo, and per-path granularity, and is optimized for performance in large, multi-instance environments.
+
 - [Repository Synchronization to Edge](https://github.com/flouis1/jf-repo-sync-to-edge)
 This worker synchronizes repositories from a source Artifactory server to a target Artifactory server. It first checks the repositories on the source server using a regular expression, then creates those that do not already exist on the target server.

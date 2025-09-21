@@ -1,0 +1,19 @@
+{
+    "name": "blockDuplicates",
+    "description": "Prevent uploads if the artifact exists in the Platform",
+     "filterCriteria": {
+        "artifactFilterCriteria": {
+            "repoKeys": [],
+            "anyLocal": false,
+            "anyRemote": false,
+            "anyFederated": false
+        }
+    },
+    "secrets": {},
+    "sourceCodePath": "./worker.ts",
+    "action": "BEFORE_UPLOAD",
+    "enabled": false,
+    "debug": true,
+    "projectKey": "",
+    "application": "artifactory"
+}

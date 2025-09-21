@@ -1,0 +1,50 @@
+{
+    "jpds": [
+        {
+            "url": "acroiz.jfrog.io",
+            "repos": [
+                {
+                    "name": "cw-generic-local",
+                    "paths": [
+                        "immutable",
+                        "foo/bar"
+                    ]
+                },
+                {
+                    "name": "chriswh-curation-test"
+                }
+            ]
+        },
+        {
+            "url": "acrois.jfrog.io",
+            "repos": [
+                {
+                    "name": "cw-generic-local",
+                    "paths": [
+                        "immutable"
+                    ]
+                },
+                {
+                    "name": "cw-duplicates-local",
+                    "paths": [
+                        "special/path",
+                        "my/special/nested"
+                    ]
+                }
+            ]
+        },
+        {
+            "url": "psazuse.jfrog.io",
+            "repos": [
+                {
+                    "name": "cw-duplicates-local",
+                    "paths": [
+                        "special/path",
+                        "my/special/nested/backup/path"
+                    ]
+                }
+            ]
+        }
+    ],
+    "action": "block"
+}
