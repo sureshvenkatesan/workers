@@ -1,0 +1,26 @@
+{
+    "name": "remote_repo_scheduled_sync_pull_worker",
+    "description": "Scheduled worker to pre-cache artifacts into remote repositories using Artifact Sync Download API",
+    "filterCriteria": {
+        "schedule": {
+            "cron": "0 */6 * * *",
+            "timezone": "UTC"
+        }
+    },
+    "secrets": {},
+    "properties": {
+        "targetRemoteRepo": "example-maven-remote",
+        "paths": "com/opencsv/opencsv/5.7.1/opencsv-5.7.1.jar;com/opencsv/opencsv/5.7.1/opencsv-5.7.1.pom",
+        "upstreamUrl": "",
+        "maxWorkers": "5",
+        "progress": "true",
+        "onlyDelta": "false",
+        "dryRun": "false"
+    },
+    "sourceCodePath": "./worker.ts",
+    "action": "SCHEDULED_EVENT",
+    "enabled": false,
+    "debug": false,
+    "projectKey": "",
+    "application": "worker"
+}
