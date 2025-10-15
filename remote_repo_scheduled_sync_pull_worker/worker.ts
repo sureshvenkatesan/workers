@@ -119,7 +119,7 @@ async function pullFilesParallel(
   log.info('Starting parallel execution with ' + maxWorkers + ' workers for ' + paths.length + ' files...');
   
   // Process files in batches to avoid overwhelming the system
-  const batchSize = maxWorkers;
+  const batchSize = Math.min(maxWorkers, 3); // Limit batch size for better performance
   for (let i = 0; i < paths.length; i += batchSize) {
     const batch = paths.slice(i, i + batchSize);
     const promises = batch.map(path => 
@@ -143,7 +143,7 @@ async function pullFilesParallel(
     
     // Small delay between batches to be respectful to the system
     if (i + batchSize < paths.length) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await context.wait(100);
     }
   }
   
@@ -282,6 +282,7 @@ async function filterDeltaFiles(
   filePaths: string[],
   onlyDelta: boolean
 ): Promise<string[]> {
+  const startTime = Date.now();
   if (!onlyDelta) {
     log.info('Delta sync disabled - will sync all ' + filePaths.length + ' files');
     return filePaths;
@@ -293,8 +294,23 @@ async function filterDeltaFiles(
   let cachedCount = 0;
   
   // Check files in batches to avoid overwhelming the API
-  const batchSize = 10;
+  const batchSize = 5;
+  const maxUncachedFiles = 50; // Limit to prevent timeout
+  
   for (let i = 0; i < filePaths.length; i += batchSize) {
+    // Check execution time limit (30 seconds max for cache checking)
+    const elapsed = Date.now() - startTime;
+    if (elapsed > 30000) {
+      log.warn('Cache check timeout reached (' + elapsed + 'ms), stopping early');
+      break;
+    }
+    
+    // Early termination if we have enough uncached files
+    if (uncachedFiles.length >= maxUncachedFiles) {
+      log.info('Reached maximum uncached files limit (' + maxUncachedFiles + '), stopping cache check');
+      break;
+    }
+    
     const batch = filePaths.slice(i, i + batchSize);
     const promises = batch.map(async (filePath) => {
       const isCached = await isFileCached(context, repoKey, filePath);
@@ -310,8 +326,8 @@ async function filterDeltaFiles(
     await Promise.all(promises);
     
     // Small delay between batches
-    if (i + batchSize < filePaths.length) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+    if (i + batchSize < filePaths.length && uncachedFiles.length < maxUncachedFiles) {
+      await context.wait(50); // Reduced delay
     }
   }
   
