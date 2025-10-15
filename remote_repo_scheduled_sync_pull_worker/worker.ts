@@ -3,10 +3,10 @@ import { PlatformContext, ScheduledEventRequest, ScheduledEventResponse, SyncCon
 
 // Logging utility
 const log = {
-  info: (message: string, ...args: any[]) => console.log(`[INFO] ${message}`, ...args),
-  warn: (message: string, ...args: any[]) => console.warn(`[WARN] ${message}`, ...args),
-  error: (message: string, ...args: any[]) => console.error(`[ERROR] ${message}`, ...args),
-  debug: (message: string, ...args: any[]) => console.log(`[DEBUG] ${message}`, ...args)
+  info: (message: string, ...args: any[]) => console.log('[INFO] ' + message, ...args),
+  warn: (message: string, ...args: any[]) => console.warn('[WARN] ' + message, ...args),
+  error: (message: string, ...args: any[]) => console.error('[ERROR] ' + message, ...args),
+  debug: (message: string, ...args: any[]) => console.log('[DEBUG] ' + message, ...args)
 };
 
 // Configuration parsing utility
@@ -59,12 +59,12 @@ function uniqueKeepOrder(items: string[]): string[] {
 
 // Build sync endpoint for Artifact Sync Download API
 function buildSyncEndpoint(repoKey: string, artifactPath: string, progress: boolean = true): string {
-  const endpoint = `/api/download/${repoKey}/${artifactPath}`;
+  const endpoint = '/artifactory/api/download/' + repoKey + '/' + artifactPath;
   const params = ['content=none'];
   if (progress) {
     params.push('progress=1');
   }
-  return `${endpoint}?${params.join('&')}`;
+  return endpoint + '?' + params.join('&');
 }
 
 // Pull a single artifact
@@ -78,8 +78,8 @@ async function pullOne(
   const endpoint = buildSyncEndpoint(repoKey, artifactPath, progress);
   
   if (dryRun) {
-    log.info(`[DRY-RUN] Would call: ${endpoint}`);
-    log.info(`[DRY-RUN] Artifact path: ${artifactPath}`);
+    log.info('[DRY-RUN] Would call: ' + endpoint);
+    log.info('[DRY-RUN] Artifact path: ' + artifactPath);
     return true;
   }
 
@@ -89,17 +89,17 @@ async function pullOne(
     
     if (success) {
       if (progress && response.data) {
-        log.info(`[OK] ${artifactPath} :: ${response.data}`);
+        log.info('[OK] ' + artifactPath + ' :: ' + response.data);
       } else {
-        log.info(`[OK] ${artifactPath} :: sync triggered`);
+        log.info('[OK] ' + artifactPath + ' :: sync triggered');
       }
     } else {
-      log.error(`[ERR] ${artifactPath} :: status=${response.status}`);
+      log.error('[ERR] ' + artifactPath + ' :: status=' + response.status);
     }
     
     return success;
   } catch (error: any) {
-    log.error(`[ERR] ${artifactPath} :: ${error.message}`);
+    log.error('[ERR] ' + artifactPath + ' :: ' + error.message);
     return false;
   }
 }
@@ -116,7 +116,7 @@ async function pullFilesParallel(
   let successCount = 0;
   let failureCount = 0;
   
-  log.info(`Starting parallel execution with ${maxWorkers} workers for ${paths.length} files...`);
+  log.info('Starting parallel execution with ' + maxWorkers + ' workers for ' + paths.length + ' files...');
   
   // Process files in batches to avoid overwhelming the system
   const batchSize = maxWorkers;
@@ -136,7 +136,7 @@ async function pullFilesParallel(
       } else {
         failureCount++;
         if ('error' in result) {
-          log.error(`Failed to process ${result.path}: ${result.error}`);
+          log.error('Failed to process ' + result.path + ': ' + result.error);
         }
       }
     }
@@ -157,16 +157,15 @@ async function discoverFilesFromUpstream(
   directoryPath: string
 ): Promise<string[]> {
   try {
-    log.info(`Discovering files from upstream: ${upstreamUrl}/${directoryPath}`);
+    log.info('Discovering files from upstream: ' + upstreamUrl + '/' + directoryPath);
     
     // Build the full URL for the directory listing
-    const fullUrl = `${upstreamUrl.replace(/\/+$/, '')}/${directoryPath.replace(/^\/+/, '').replace(/\/+$/, '')}/`;
+    const fullUrl = upstreamUrl.replace(/\/+$/, '') + '/' + directoryPath.replace(/^\/+/, '').replace(/\/+$/, '') + '/';
     
-    log.debug(`Making HTTP request to: ${fullUrl}`);
+    log.debug('Making HTTP request to: ' + fullUrl);
     
     // Make external HTTP call using axios client
     const response = await context.clients.axios.get(fullUrl, {
-      timeout: 10000, // 10 second timeout
       headers: {
         'User-Agent': 'JFrog-Worker/1.0'
       }
@@ -195,50 +194,129 @@ async function discoverFilesFromUpstream(
         
         if (href.endsWith('/')) {
           // This is a subdirectory
-          if (cleanHref && cleanHref !== directoryPath.replace(/\/+$/, '')) {
-            subdirectories.push(cleanHref.replace(/\/+$/, ''));
+          if (cleanHref && cleanHref !== directoryPath.replace(/\/+$/, '') && !cleanHref.includes('..')) {
+            // Remove the directory path prefix if it's already included in the href
+            let subdirName = cleanHref.replace(/\/+$/, '');
+            const dirName = directoryPath.replace(/\/+$/, '');
+            if (subdirName.startsWith(dirName + '/')) {
+              subdirName = subdirName.substring(dirName.length + 1);
+            }
+            if (subdirName && subdirName !== dirName) {
+              subdirectories.push(subdirName);
+            }
           }
         } else {
           // This is a file - check if it looks like a common artifact file
           const commonExtensions = ['.jar', '.pom', '.war', '.ear', '.aar', '.zip', '.tar.gz', '.tgz', '.md5', '.sha1', '.sha256', '.sha512', '.asc'];
           if (commonExtensions.some(ext => cleanHref.endsWith(ext)) || cleanHref.includes('.')) {
-            // Construct the full path
-            const fullPath = directoryPath.replace(/\/+$/, '') + '/' + cleanHref;
+            // Construct the full path, but avoid duplication
+            let fullPath = cleanHref;
+            const dirName = directoryPath.replace(/\/+$/, '');
+            if (!fullPath.startsWith(dirName + '/')) {
+              fullPath = directoryPath.replace(/\/+$/, '') + '/' + cleanHref;
+            }
             discoveredFiles.push(fullPath);
           }
         }
       }
       
       // Recursively discover files in subdirectories (limited depth to avoid infinite recursion)
+      log.debug('Found subdirectories: ' + JSON.stringify(subdirectories));
       for (const subdir of subdirectories.slice(0, 5)) { // Limit to 5 subdirectories
         try {
-          const subdirPath = directoryPath.replace(/\/+$/, '') + '/' + subdir;
-          log.debug(`Recursively discovering subdirectory: ${subdirPath}`);
-          const subdirFiles = await discoverFilesFromUpstream(context, upstreamUrl, subdirPath);
-          discoveredFiles.push(...subdirFiles);
+          // Don't recurse into subdirectories that would create duplicate paths
+          if (subdir !== directoryPath.replace(/\/+$/, '')) {
+            const subdirPath = directoryPath.replace(/\/+$/, '') + '/' + subdir;
+            log.debug('Recursively discovering subdirectory: ' + subdirPath);
+            const subdirFiles = await discoverFilesFromUpstream(context, upstreamUrl, subdirPath);
+            discoveredFiles.push(...subdirFiles);
+          }
         } catch (subdirError: any) {
-          log.warn(`Failed to discover files in subdirectory ${subdir}: ${subdirError.message}`);
+          log.warn('Failed to discover files in subdirectory ' + subdir + ': ' + subdirError.message);
         }
       }
       
       if (discoveredFiles.length > 0) {
-        log.info(`Discovered ${discoveredFiles.length} files from ${fullUrl}`);
+        log.info('Discovered ' + discoveredFiles.length + ' files from ' + fullUrl);
         return discoveredFiles;
       } else {
-        log.warn(`No files found in ${fullUrl}`);
+        log.warn('No files found in ' + fullUrl);
         return [];
       }
     } else {
-      log.warn(`Could not access upstream URL: HTTP ${response.status}`);
+      log.warn('Could not access upstream URL: HTTP ' + response.status);
       return [];
     }
   } catch (error: any) {
-    log.error(`Error discovering files from upstream: ${error.message}`);
+    log.error('Error discovering files from upstream: ' + error.message);
     if (error.response) {
-      log.error(`HTTP Error: ${error.response.status} - ${error.response.statusText}`);
+      log.error('HTTP Error: ' + error.response.status + ' - ' + error.response.statusText);
     }
     return [];
   }
+}
+
+// Check if a file is already cached in the cache repository
+async function isFileCached(
+  context: PlatformContext,
+  repoKey: string,
+  filePath: string
+): Promise<boolean> {
+  try {
+    // The cache repository is typically named {repoKey}-cache
+    const cacheRepoName = repoKey + '-cache';
+    
+    // Use the Artifactory API to check if the file exists in the cache repository
+    const response = await context.clients.platformHttp.get('/artifactory/api/storage/' + cacheRepoName + '/' + filePath);
+    return response.status === 200;
+  } catch (error: any) {
+    // If we get a 404 or other error, the file is not cached
+    return false;
+  }
+}
+
+// Filter files based on delta sync setting
+async function filterDeltaFiles(
+  context: PlatformContext,
+  repoKey: string,
+  filePaths: string[],
+  onlyDelta: boolean
+): Promise<string[]> {
+  if (!onlyDelta) {
+    log.info('Delta sync disabled - will sync all ' + filePaths.length + ' files');
+    return filePaths;
+  }
+  
+  const cacheRepoName = repoKey + '-cache';
+  log.info('Delta sync enabled - checking cache status for ' + filePaths.length + ' files in cache repository: ' + cacheRepoName);
+  const uncachedFiles: string[] = [];
+  let cachedCount = 0;
+  
+  // Check files in batches to avoid overwhelming the API
+  const batchSize = 10;
+  for (let i = 0; i < filePaths.length; i += batchSize) {
+    const batch = filePaths.slice(i, i + batchSize);
+    const promises = batch.map(async (filePath) => {
+      const isCached = await isFileCached(context, repoKey, filePath);
+      if (isCached) {
+        cachedCount++;
+        log.debug('Already cached: ' + filePath);
+      } else {
+        uncachedFiles.push(filePath);
+        log.debug('Not cached: ' + filePath);
+      }
+    });
+    
+    await Promise.all(promises);
+    
+    // Small delay between batches
+    if (i + batchSize < filePaths.length) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+  
+  log.info('Cache check complete: ' + cachedCount + ' files already cached, ' + uncachedFiles.length + ' files need syncing');
+  return uncachedFiles;
 }
 
 // Expand directory paths into individual file paths
@@ -254,23 +332,28 @@ async function expandDirectoryPaths(
   for (const path of paths) {
     if (path.endsWith('/')) {
       // This is a directory path - discover files within it
-      log.info(`Discovering files in directory: ${path}`);
+      log.info('Discovering files in directory: ' + path);
       
       if (upstreamUrl) {
         const upstreamFiles = await discoverFilesFromUpstream(context, upstreamUrl, path);
         if (upstreamFiles.length > 0) {
-          log.info(`Found ${upstreamFiles.length} files from upstream`);
+          log.info('Found ' + upstreamFiles.length + ' files from upstream');
           expandedPaths.push(...upstreamFiles);
         } else {
-          log.warn(`Could not discover files from upstream for directory: ${path}`);
+          log.warn('Could not discover files from upstream for directory: ' + path);
         }
       } else {
-        log.warn(`No upstream URL available for directory discovery: ${path}`);
+        log.warn('No upstream URL available for directory discovery: ' + path);
       }
     } else {
       // This is a file path - use as-is
       expandedPaths.push(path);
     }
+  }
+  
+  // Apply delta filtering if enabled
+  if (onlyDelta && expandedPaths.length > 0) {
+    return await filterDeltaFiles(context, repoKey, expandedPaths, onlyDelta);
   }
   
   return expandedPaths;
@@ -282,10 +365,10 @@ async function getRemoteRepositoryUpstreamUrl(
   repoKey: string
 ): Promise<string | null> {
   try {
-    const response = await context.clients.platformHttp.get(`/api/repositories/${repoKey}`);
+    const response = await context.clients.platformHttp.get('/artifactory/api/repositories/' + repoKey);
     
     if (response.status !== 200) {
-      log.warn(`Could not retrieve repository config for '${repoKey}': ${response.status}`);
+      log.warn('Could not retrieve repository config for \'' + repoKey + '\': ' + response.status);
       return null;
     }
     
@@ -293,7 +376,7 @@ async function getRemoteRepositoryUpstreamUrl(
     
     // Check if this is a remote repository
     if (config.rclass !== 'remote') {
-      log.warn(`Repository '${repoKey}' is not a remote repository (rclass: ${config.rclass})`);
+      log.warn('Repository \'' + repoKey + '\' is not a remote repository (rclass: ' + config.rclass + ')');
       return null;
     }
     
@@ -301,14 +384,14 @@ async function getRemoteRepositoryUpstreamUrl(
     const upstreamUrl = config.url;
     if (upstreamUrl) {
       const cleanUrl = upstreamUrl.replace(/\/+$/, ''); // Remove trailing slashes
-      log.info(`Auto-detected upstream URL from repository config: ${cleanUrl}`);
+      log.info('Auto-detected upstream URL from repository config: ' + cleanUrl);
       return cleanUrl;
     } else {
-      log.warn(`No upstream URL found in repository '${repoKey}' configuration`);
+      log.warn('No upstream URL found in repository \'' + repoKey + '\' configuration');
       return null;
     }
   } catch (error: any) {
-    log.error(`Error retrieving repository configuration: ${error.message}`);
+    log.error('Error retrieving repository configuration: ' + error.message);
     return null;
   }
 }
@@ -321,7 +404,7 @@ export default async (
   const startTime = Date.now();
   
   try {
-    log.info(`SCHEDULED_EVENT triggered with ID: ${data.triggerID}`);
+    log.info('SCHEDULED_EVENT triggered with ID: ' + data.triggerID);
     
     // Parse configuration from worker properties
     const targetRemoteRepo = getProperty(context, 'targetRemoteRepo');
@@ -337,11 +420,23 @@ export default async (
     const onlyDelta = getProperty(context, 'onlyDelta', 'false') === 'true';
     const dryRun = getProperty(context, 'dryRun', 'false') === 'true';
     
-    log.info(`Configuration loaded: repo=${targetRemoteRepo}, maxWorkers=${maxWorkers}, progress=${progress}, onlyDelta=${onlyDelta}, dryRun=${dryRun}`);
+    // Debug: Log the raw property values
+    log.debug('Raw property values:');
+    log.debug('  targetRemoteRepo: "' + getProperty(context, 'targetRemoteRepo') + '"');
+    log.debug('  paths: "' + getProperty(context, 'paths') + '"');
+    log.debug('  upstreamUrl: "' + getProperty(context, 'upstreamUrl') + '"');
+    log.debug('  maxWorkers: "' + getProperty(context, 'maxWorkers') + '"');
+    log.debug('  progress: "' + getProperty(context, 'progress') + '"');
+    log.debug('  onlyDelta: "' + getProperty(context, 'onlyDelta') + '"');
+    log.debug('  dryRun: "' + getProperty(context, 'dryRun') + '"');
+    
+    log.info('Configuration loaded: repo=' + targetRemoteRepo + ', maxWorkers=' + maxWorkers + ', progress=' + progress + ', onlyDelta=' + onlyDelta + ', dryRun=' + dryRun);
     
     // Gather path list
     let allPaths: string[] = [];
-    allPaths.push(...parsePathsArg(paths));
+    const parsedPaths = parsePathsArg(paths);
+    log.debug('Parsed paths from input: ' + JSON.stringify(parsedPaths));
+    allPaths.push(...parsedPaths);
     
     // Note: pathsFile reading would require file system access which isn't available in workers
     // Users should use the paths property instead
@@ -350,6 +445,7 @@ export default async (
     }
     
     allPaths = uniqueKeepOrder(allPaths);
+    log.debug('Paths after deduplication: ' + JSON.stringify(allPaths));
     
     if (allPaths.length === 0) {
       log.warn('No artifact paths provided. Nothing to sync.');
@@ -367,7 +463,7 @@ export default async (
         log.warn('Could not auto-detect upstream URL. Directory discovery will not work.');
       }
     } else {
-      log.info(`Using provided upstream URL: ${finalUpstreamUrl}`);
+      log.info('Using provided upstream URL: ' + finalUpstreamUrl);
     }
     
     // Expand directory paths into individual file paths
@@ -384,19 +480,19 @@ export default async (
       };
     }
     
-    log.info(`Total artifacts to sync: ${allPaths.length}`);
+    log.info('Total artifacts to sync: ' + allPaths.length);
     
     // Log the file list
     log.info('=== FILE LIST TO BE PROCESSED ===');
     allPaths.forEach((path, index) => {
-      log.info(`[${index + 1}/${allPaths.length}] ${path}`);
+      log.info('[' + (index + 1) + '/' + allPaths.length + '] ' + path);
     });
     log.info('=== END FILE LIST ===');
     
     if (dryRun) {
       log.info('DRY-RUN mode is ON — no network calls will be made.');
       return {
-        message: `DRY-RUN: Would sync ${allPaths.length} artifacts to ${targetRemoteRepo}`
+        message: 'DRY-RUN: Would sync ' + allPaths.length + ' artifacts to ' + targetRemoteRepo
       };
     }
     
@@ -413,18 +509,18 @@ export default async (
     const executionTime = Date.now() - startTime;
     
     if (result.failureCount > 0) {
-      const message = `Completed with ${result.failureCount} failures out of ${allPaths.length} items. Successfully processed: ${result.successCount}, Failed: ${result.failureCount}`;
+      const message = 'Completed with ' + result.failureCount + ' failures out of ' + allPaths.length + ' items. Successfully processed: ' + result.successCount + ', Failed: ' + result.failureCount;
       log.error(message);
       return { message };
     } else {
-      const message = `Successfully synced ${result.successCount} artifacts to ${targetRemoteRepo} in ${executionTime}ms`;
+      const message = 'Successfully synced ' + result.successCount + ' artifacts to ' + targetRemoteRepo + ' in ' + executionTime + 'ms';
       log.info(message);
       return { message };
     }
     
   } catch (error: any) {
     const executionTime = Date.now() - startTime;
-    const message = `SCHEDULED_EVENT failed after ${executionTime}ms: ${error.message}`;
+    const message = 'SCHEDULED_EVENT failed after ' + executionTime + 'ms: ' + error.message;
     log.error(message);
     return { message };
   }

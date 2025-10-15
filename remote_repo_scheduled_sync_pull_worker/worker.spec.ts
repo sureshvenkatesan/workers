@@ -9,7 +9,7 @@ describe("remote_repo_scheduled_sync_pull_worker tests", () => {
 
     beforeEach(() => {
         mockPlatformHttp = createMock<PlatformHttpClient>({
-            get: jest.fn().mockResolvedValue({ status: 200, data: {} })
+            get: jest.fn().mockResolvedValue({ status: 200, data: {}, headers: {} })
         });
 
         context = createMock<PlatformContext>({
@@ -45,11 +45,12 @@ describe("remote_repo_scheduled_sync_pull_worker tests", () => {
             // Mock repository config call
             mockPlatformHttp.get.mockResolvedValueOnce({
                 status: 200,
-                data: { rclass: 'remote', url: 'https://example.com' }
+                data: { rclass: 'remote', url: 'https://example.com' },
+                headers: {}
             });
 
             // Mock sync calls
-            mockPlatformHttp.get.mockResolvedValue({ status: 200, data: 'sync triggered' });
+            mockPlatformHttp.get.mockResolvedValue({ status: 200, data: 'sync triggered', headers: {} });
 
             const result = await runWorker(context, request);
 
@@ -108,7 +109,7 @@ describe("remote_repo_scheduled_sync_pull_worker tests", () => {
                 .mockReturnValueOnce('false') // onlyDelta
                 .mockReturnValueOnce('false'); // dryRun
 
-            mockPlatformHttp.get.mockResolvedValue({ status: 200, data: 'sync triggered' });
+            mockPlatformHttp.get.mockResolvedValue({ status: 200, data: 'sync triggered', headers: {} });
 
             const result = await runWorker(context, request);
 
@@ -129,7 +130,7 @@ describe("remote_repo_scheduled_sync_pull_worker tests", () => {
                 .mockReturnValueOnce('false') // onlyDelta
                 .mockReturnValueOnce('false'); // dryRun
 
-            mockPlatformHttp.get.mockResolvedValue({ status: 200, data: 'sync triggered' });
+            mockPlatformHttp.get.mockResolvedValue({ status: 200, data: 'sync triggered', headers: {} });
 
             const result = await runWorker(context, request);
 
@@ -154,11 +155,12 @@ describe("remote_repo_scheduled_sync_pull_worker tests", () => {
             // Mock repository config response
             mockPlatformHttp.get.mockResolvedValueOnce({
                 status: 200,
-                data: { rclass: 'remote', url: 'https://repo1.maven.org/maven2' }
+                data: { rclass: 'remote', url: 'https://repo1.maven.org/maven2' },
+                headers: {}
             });
 
             // Mock sync calls
-            mockPlatformHttp.get.mockResolvedValue({ status: 200, data: 'sync triggered' });
+            mockPlatformHttp.get.mockResolvedValue({ status: 200, data: 'sync triggered', headers: {} });
 
             const result = await runWorker(context, request);
 
@@ -180,11 +182,12 @@ describe("remote_repo_scheduled_sync_pull_worker tests", () => {
             // Mock repository config response for local repository
             mockPlatformHttp.get.mockResolvedValueOnce({
                 status: 200,
-                data: { rclass: 'local', url: null }
+                data: { rclass: 'local', url: null },
+                headers: {}
             });
 
             // Mock sync calls
-            mockPlatformHttp.get.mockResolvedValue({ status: 200, data: 'sync triggered' });
+            mockPlatformHttp.get.mockResolvedValue({ status: 200, data: 'sync triggered', headers: {} });
 
             const result = await runWorker(context, request);
 
@@ -208,13 +211,14 @@ describe("remote_repo_scheduled_sync_pull_worker tests", () => {
             // Mock repository config call
             mockPlatformHttp.get.mockResolvedValueOnce({
                 status: 200,
-                data: { rclass: 'remote', url: 'https://example.com' }
+                data: { rclass: 'remote', url: 'https://example.com' },
+                headers: {}
             });
 
             // Mock one success and one failure
             mockPlatformHttp.get
-                .mockResolvedValueOnce({ status: 200, data: 'sync triggered' }) // file1.jar success
-                .mockResolvedValueOnce({ status: 404, data: 'Not found' }); // file2.pom failure
+                .mockResolvedValueOnce({ status: 200, data: 'sync triggered', headers: {} }) // file1.jar success
+                .mockResolvedValueOnce({ status: 404, data: 'Not found', headers: {} }); // file2.pom failure
 
             const result = await runWorker(context, request);
 
@@ -238,7 +242,7 @@ describe("remote_repo_scheduled_sync_pull_worker tests", () => {
             mockPlatformHttp.get.mockRejectedValueOnce(new Error('Repository not found'));
 
             // Mock sync calls
-            mockPlatformHttp.get.mockResolvedValue({ status: 200, data: 'sync triggered' });
+            mockPlatformHttp.get.mockResolvedValue({ status: 200, data: 'sync triggered', headers: {} });
 
             const result = await runWorker(context, request);
 
@@ -259,7 +263,7 @@ describe("remote_repo_scheduled_sync_pull_worker tests", () => {
                 .mockReturnValueOnce('false') // onlyDelta
                 .mockReturnValueOnce('false'); // dryRun
 
-            mockPlatformHttp.get.mockResolvedValue({ status: 200, data: 'sync triggered' });
+            mockPlatformHttp.get.mockResolvedValue({ status: 200, data: 'sync triggered', headers: {} });
 
             const result = await runWorker(context, request);
 
@@ -278,7 +282,7 @@ describe("remote_repo_scheduled_sync_pull_worker tests", () => {
                 .mockReturnValueOnce('false') // onlyDelta
                 .mockReturnValueOnce('false'); // dryRun
 
-            mockPlatformHttp.get.mockResolvedValue({ status: 200, data: 'sync triggered' });
+            mockPlatformHttp.get.mockResolvedValue({ status: 200, data: 'sync triggered', headers: {} });
 
             const result = await runWorker(context, request);
 
@@ -303,7 +307,8 @@ describe("remote_repo_scheduled_sync_pull_worker tests", () => {
             // Mock repository config call
             mockPlatformHttp.get.mockResolvedValueOnce({
                 status: 200,
-                data: { rclass: 'remote', url: 'https://example.com' }
+                data: { rclass: 'remote', url: 'https://example.com' },
+                headers: {}
             });
 
             // Mock external HTTP call for directory discovery
@@ -313,7 +318,7 @@ describe("remote_repo_scheduled_sync_pull_worker tests", () => {
             });
 
             // Mock sync calls for discovered files
-            mockPlatformHttp.get.mockResolvedValue({ status: 200, data: 'sync triggered' });
+            mockPlatformHttp.get.mockResolvedValue({ status: 200, data: 'sync triggered', headers: {} });
 
             const result = await runWorker(context, request);
 
@@ -345,7 +350,8 @@ describe("remote_repo_scheduled_sync_pull_worker tests", () => {
             // Mock repository config call
             mockPlatformHttp.get.mockResolvedValueOnce({
                 status: 200,
-                data: { rclass: 'remote', url: 'https://example.com' }
+                data: { rclass: 'remote', url: 'https://example.com' },
+                headers: {}
             });
 
             // Mock external HTTP call failure

@@ -9,18 +9,18 @@
     },
     "secrets": {},
     "properties": {
-        "targetRemoteRepo": "example-maven-remote",
-        "paths": "com/opencsv/opencsv/5.7.1/opencsv-5.7.1.jar;com/opencsv/opencsv/5.7.1/opencsv-5.7.1.pom",
-        "upstreamUrl": "",
+        "targetRemoteRepo": "sv-broadcom-maven-remote",
+        "paths": "confluent-control-center-next-gen/",
+        "upstreamUrl": "https://packages.confluent.io",
         "maxWorkers": "5",
         "progress": "true",
-        "onlyDelta": "false",
+        "onlyDelta": "true",
         "dryRun": "false"
     },
     "sourceCodePath": "./worker.ts",
     "action": "SCHEDULED_EVENT",
     "enabled": false,
-    "debug": false,
+    "debug": true,
     "projectKey": "",
     "application": "worker"
 }
